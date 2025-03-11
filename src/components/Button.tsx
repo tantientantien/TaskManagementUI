@@ -8,7 +8,7 @@ interface ButtonProps {
   className?: string;
   fullWidth?: boolean;
   disabled?: boolean;
-  color?: string; // New prop for button color
+  color?: string;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -37,7 +37,7 @@ const Button: React.FC<ButtonProps> = ({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      style={{ backgroundColor: color }} // Use inline style for custom color
+      style={{ backgroundColor: color }}
       className={`${baseClasses} ${variantClasses[variant]} ${widthClass} ${disabledClass} ${className}`}
     >
       {children}
