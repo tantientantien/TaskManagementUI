@@ -1,7 +1,6 @@
 import { useState } from "react";
 
 export const useFormShake = () => {
-  
   const [shake, setShake] = useState(false);
 
   const triggerShakeAnimation = () => {

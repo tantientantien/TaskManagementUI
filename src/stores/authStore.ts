@@ -1,36 +1,71 @@
+// useAuth.ts (chỉ giữ logic store, không điều hướng)
 import { create } from "zustand";
+import axios, { AxiosError } from "axios";
+import { AuthState, LoginData, RegisterData } from "../structures/others";
+import { BASE_URL } from "../config/environment";
 
-interface User {
-  email: string;
-  uid: string;
-}
+export const useAuth = create<AuthState>((set, get) => ({
+  user: null,
+  isLoggingIn: false,
+  isRegistering: false,
+  loginError: null,
+  registerError: null,
 
-interface AuthState {
-  user: User | null;
-  isAuthenticated: boolean;
-  setUser: (user: User | null) => void;
-  logout: () => void;
-}
-
-
-const storedUser = localStorage.getItem("user");
-const initialUser: User | null = storedUser ? JSON.parse(storedUser) : null;
-
-export const useAuthStore = create<AuthState>((set) => ({
-  user: initialUser,
-  isAuthenticated: !!initialUser,
-  
-  setUser: (user) => {
-    if (user) {
-      localStorage.setItem("user", JSON.stringify(user));
-    } else {
-      localStorage.removeItem("user");
+  getMe: async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/users/me`, {
+        withCredentials: true,
+      });
+      set({ user: response.data.data });
+    } catch {
+      set({ user: null });
     }
-    set({ user, isAuthenticated: !!user });
   },
 
-  logout: () => {
-    localStorage.removeItem("user");
-    set({ user: null, isAuthenticated: false });
+  login: async (data: LoginData) => {
+    const { useCookies, ...credentials } = data;
+    set({ isLoggingIn: true, loginError: null });
+    try {
+      await axios.post(
+        `${BASE_URL}/login`,
+        credentials,
+        { params: { useCookies }, withCredentials: useCookies }
+      );
+      await get().getMe();
+      set({ isLoggingIn: false });
+      return true;
+    } catch (error) {
+      console.error("Login failed:", error);
+      set({
+        isLoggingIn: false,
+        loginError: error instanceof Error ? error : new Error("Login failed"),
+      });
+      return false;
+    }
+  },
+
+  register: async (data: RegisterData) => {
+    set({ isRegistering: true, registerError: null });
+    try {
+      await axios.post(`${BASE_URL}/register`, data);
+      set({ isRegistering: false });
+      return true;
+    } catch (error) {
+      console.error("Registration failed:", error);
+      set({
+        isRegistering: false,
+        registerError: error as AxiosError,
+      });
+      return false;
+    }
+  },
+
+  logout: async () => {
+    try {
+      await axios.post(`${BASE_URL}/users/logout`, {}, { withCredentials: true });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+    set({ user: null });
   },
 }));

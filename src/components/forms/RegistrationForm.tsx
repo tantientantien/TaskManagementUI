@@ -2,12 +2,15 @@
 import React from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import FormInput from "../components/FormInput";
+import FormInput from "../forms/FormInput";
 import Button from "../components/Button";
-import { useRegister } from "../hooks/useRegister";
-import { registrationSchema, RegistrationSchema } from "../validation/registrationSchema";
+import { useRegister } from "../../hooks/useRegister";
+import {
+  registrationSchema,
+  RegistrationSchema,
+} from "../../validation/registrationSchema";
 import { Link } from "react-router-dom";
-import { useFormShake } from "../hooks/useFormShake";
+import { useFormShake } from "./useFormShake";
 
 const RegistrationForm: React.FC = () => {
   const {
@@ -21,16 +24,19 @@ const RegistrationForm: React.FC = () => {
   const { register: registerUser, isPending } = useRegister();
   const { shake, triggerShakeAnimation } = useFormShake();
 
-  const onSubmit: SubmitHandler<RegistrationSchema> = (data) => {
-    registerUser(data, {
-      onError: () => triggerShakeAnimation(),
-    });
+  const onSubmit: SubmitHandler<RegistrationSchema> = async (data) => {
+    const success = await registerUser(data);
+    if (!success) {
+      triggerShakeAnimation();
+    }
   };
 
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className={`mt-4 w-[300px] p-4 rounded-lg bg-transparent ${shake ? "animate-shake" : ""}`}
+      className={`mt-4 w-[350px] p-4 rounded-lg bg-transparent ${
+        shake ? "animate-shake" : ""
+      }`}
     >
       <FormInput
         id="email"
@@ -62,12 +68,7 @@ const RegistrationForm: React.FC = () => {
         textColor="text-black"
       />
       <div className="mt-5">
-        <Button
-          type="submit"
-          fullWidth
-          disabled={isPending}
-          color="#3b78df"
-        >
+        <Button type="submit" fullWidth disabled={isPending} color="#3b78df">
           {isPending ? "..." : "Continue"}
         </Button>
       </div>

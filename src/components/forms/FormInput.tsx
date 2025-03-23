@@ -1,15 +1,4 @@
-import { UseFormRegister, FieldError, Path } from "react-hook-form";
-
-interface FormInputProps<TFormValues extends Record<string, unknown>> {
-  id: Path<TFormValues>;
-  label: string;
-  type?: string;
-  register: UseFormRegister<TFormValues>;
-  required?: boolean;
-  error?: FieldError;
-  placeholder?: string;
-  textColor?: string;
-}
+import { FormInputProps } from "../../structures/component";
 
 const FormInput = <TFormValues extends Record<string, unknown>>({
   id,
@@ -22,8 +11,10 @@ const FormInput = <TFormValues extends Record<string, unknown>>({
   textColor = "text-black",
 }: FormInputProps<TFormValues>) => {
   const inputClassName = `border-2 rounded-lg px-4 py-3 mt-1 text-sm w-full focus:outline-none transition-all duration-200 ${
-    error ? "border-red-500 text-red-500 focus:ring-2 focus:ring-red-400" : `border-white ${textColor}`
-  }`;  
+    error
+      ? "border-red-500 text-red-500 focus:ring-2 focus:ring-red-400"
+      : `border-gray-200 ${textColor}`
+  }`;
 
   return (
     <div className="mb-4">
