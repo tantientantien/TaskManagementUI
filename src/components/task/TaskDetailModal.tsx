@@ -19,7 +19,7 @@ import TaskTitleInput from "./TaskTitleInput";
 import TaskDescription from "./TaskDescription";
 import TaskComment from "./TaskComment";
 import { CategoryDropdown } from "../components/CategoryDropdown";
-import { UpdateTaskPayload } from "../../structures/others";
+
 
 export const TaskDetailModal = ({
   task,
@@ -58,55 +58,46 @@ export const TaskDetailModal = ({
     queryFn: fetchCategories,
   });
 
-  const updateTaskMutation = useMutation({
-    mutationFn: (
-      payload: Partial<UpdateTaskPayload>
-    ) => updateTask(task.id, payload),
-    onSuccess: () => {
-      //queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      toast.success("Task category updated successfully");
-    },
-    onError: () => {
-      toast.error("Failed to update task category");
-    },
-  });
 
-  const handleCategoryChange = (category: Category | null) => {
-    if (selectedCategory?.id !== category?.id) {
+  const updateTaskMutation = useMutation({
+    mutationFn: (payload: { categoryId: number | undefined }) =>
+      updateTask(task.id, payload),
+    onMutate: async (newData) => {
+      const previousTasks = queryClient.getQueryData<Task[]>(["tasks"]);
       const previousCategory = selectedCategory;
-      
-      setSelectedCategory(category);
-      
       queryClient.setQueryData(["tasks"], (oldTasks: Task[] | undefined) => {
         if (!oldTasks) return oldTasks;
-        
-        return oldTasks.map((t) => 
-          t.id === task.id 
-            ? { ...t, categoryId: category?.id || null, category: category } 
+        return oldTasks.map((t) =>
+          t.id === task.id
+            ? {
+                ...t,
+                categoryId: newData.categoryId || null,
+                category: selectedCategory,
+              }
             : t
         );
       });
-      
-      updateTaskMutation.mutate(
-        { categoryId: category?.id },
-        {
-          onError: () => {
-            setSelectedCategory(previousCategory);
-            
-            queryClient.setQueryData(["tasks"], (oldTasks: Task[] | undefined) => {
-              if (!oldTasks) return oldTasks;
-              
-              return oldTasks.map((t) => 
-                t.id === task.id 
-                  ? { ...t, categoryId: previousCategory?.id || null, category: previousCategory } 
-                  : t
-              );
-            });
-            
-            toast.error("Failed to update task category");
-          }
-        }
-      );
+
+      return { previousTasks, previousCategory };
+    },
+    onError: (error, _newData, context) => {
+      queryClient.setQueryData(["tasks"], context?.previousTasks);
+      setSelectedCategory(context?.previousCategory || null);
+      toast.error("Failed to update task category");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "active" });
+      toast.success("Task category updated successfully");
+    },
+  });
+  
+
+  const handleCategoryChange = (category: Category | null) => {
+    if (selectedCategory?.id !== category?.id) {
+      setSelectedCategory(category);
+      updateTaskMutation.mutate({
+        categoryId: category?.id,
+      });
     }
   };
 
